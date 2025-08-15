@@ -1,0 +1,236 @@
+{
+  "PENGU-USDT-SWAP": {
+    "direction": "short",
+    "entry_price": 0.036981,
+    "size": 31.6678,
+    "original_size": 31.6678,
+    "stop_loss": 0.038476,
+    "take_profit": 0.033991,
+    "profit_levels": {
+      "1R": 0.035486,
+      "2R": 0.033991,
+      "3R": 0.032496,
+      "4R": 0.031001
+    },
+    "profits_taken": {
+      "1R": false,
+      "2R": false,
+      "3R": false,
+      "4R": false
+    },
+    "high_water_mark": 0.036981,
+    "trailing_stop_active": false,
+    "atr": 0.0004984285714285713,
+    "signal_type": "momentum",
+    "opened_at": 1755094897.124047,
+    "paper_trade": false
+  },
+  "LTC-USDT-SWAP": {
+    "direction": "short",
+    "entry_price": 121.49,
+    "size": 6.2122,
+    "original_size": 11.0439,
+    "stop_loss": 119.201429,
+    "take_profit": 116.912858,
+    "profit_levels": {
+      "1R": 119.201429,
+      "2R": 116.912858,
+      "3R": 114.624287,
+      "4R": 112.335716
+    },
+    "profits_taken": {
+      "1R": true,
+      "2R": true,
+      "3R": false,
+      "4R": false
+    },
+    "high_water_mark": 116.88,
+    "trailing_stop_active": false,
+    "atr": 1.144285714285715,
+    "signal_type": "momentum",
+    "opened_at": 1755243533.506262,
+    "paper_trade": false
+  },
+  "LINK-USDT-SWAP": {
+    "direction": "short",
+    "entry_price": 22.588,
+    "size": 26.6224,
+    "original_size": 47.3288,
+    "stop_loss": 22.148143,
+    "take_profit": 21.708286,
+    "profit_levels": {
+      "1R": 22.148143,
+      "2R": 21.708286,
+      "3R": 21.268429,
+      "4R": 20.828572
+    },
+    "profits_taken": {
+      "1R": true,
+      "2R": true,
+      "3R": false,
+      "4R": false
+    },
+    "high_water_mark": 21.693,
+    "trailing_stop_active": false,
+    "atr": 0.21992857142857147,
+    "signal_type": "momentum",
+    "opened_at": 1755243540.360428,
+    "paper_trade": false
+  },
+  "BTC-USDT-SWAP": {
+    "direction": "short",
+    "entry_price": 118842.4,
+    "size": 0.0526,
+    "original_size": 0.0526,
+    "stop_loss": 120030.824,
+    "take_profit": 116465.552,
+    "profit_levels": {
+      "1R": 117653.976,
+      "2R": 116465.552,
+      "3R": 115277.128,
+      "4R": 114088.704
+    },
+    "profits_taken": {
+      "1R": false,
+      "2R": false,
+      "3R": false,
+      "4R": false
+    },
+    "high_water_mark": 118842.4,
+    "trailing_stop_active": false,
+    "atr": 594.212,
+    "signal_type": "momentum",
+    "opened_at": 1755242166.2912672,
+    "paper_trade": false
+  },
+  "SOL-USDT-SWAP": {
+    "direction": "short",
+    "entry_price": 193.52,
+    "size": 3.406,
+    "original_size": 4.5414,
+    "stop_loss": 193.52,
+    "take_profit": 175.371428,
+    "profit_levels": {
+      "1R": 184.445714,
+      "2R": 175.371428,
+      "3R": 166.297142,
+      "4R": 157.222856
+    },
+    "profits_taken": {
+      "1R": true,
+      "2R": false,
+      "3R": false,
+      "4R": false
+    },
+    "high_water_mark": 183.62,
+    "trailing_stop_active": false,
+    "atr": 4.537142857142856,
+    "signal_type": "momentum",
+    "opened_at": 1755261643.429405,
+    "paper_trade": false
+  },
+  "NEAR-USDT-SWAP": {
+    "direction": "short",
+    "entry_price": 2.691,
+    "size": 41.0329,
+    "original_size": 41.0329,
+    "stop_loss": 2.755143,
+    "take_profit": 2.562714,
+    "profit_levels": {
+      "1R": 2.626857,
+      "2R": 2.562714,
+      "3R": 2.498571,
+      "4R": 2.434428
+    },
+    "profits_taken": {
+      "1R": false,
+      "2R": false,
+      "3R": false,
+      "4R": false
+    },
+    "high_water_mark": 2.691,
+    "trailing_stop_active": false,
+    "atr": 0.03207142857142853,
+    "signal_type": "momentum",
+    "opened_at": 1755270704.831329,
+    "paper_trade": false
+  },
+  "ADA-USDT-SWAP": {
+    "direction": "short",
+    "entry_price": 0.9294,
+    "size": 12.9005,
+    "original_size": 12.9005,
+    "stop_loss": 0.956829,
+    "take_profit": 0.874542,
+    "profit_levels": {
+      "1R": 0.901971,
+      "2R": 0.874542,
+      "3R": 0.847113,
+      "4R": 0.819684
+    },
+    "profits_taken": {
+      "1R": false,
+      "2R": false,
+      "3R": false,
+      "4R": false
+    },
+    "high_water_mark": 0.9294,
+    "trailing_stop_active": false,
+    "atr": 0.01371428571428571,
+    "signal_type": "momentum",
+    "opened_at": 1755275240.5853949,
+    "paper_trade": false
+  },
+  "AVAX-USDT-SWAP": {
+    "direction": "short",
+    "entry_price": 23.492,
+    "size": 42.6452,
+    "original_size": 42.6452,
+    "stop_loss": 23.903429,
+    "take_profit": 22.669142,
+    "profit_levels": {
+      "1R": 23.080571,
+      "2R": 22.669142,
+      "3R": 22.257713,
+      "4R": 21.846284
+    },
+    "profits_taken": {
+      "1R": false,
+      "2R": false,
+      "3R": false,
+      "4R": false
+    },
+    "high_water_mark": 23.492,
+    "trailing_stop_active": false,
+    "atr": 0.20571428571428615,
+    "signal_type": "momentum",
+    "opened_at": 1755287776.376962,
+    "paper_trade": false
+  },
+  "XRP-USDT-SWAP": {
+    "direction": "long",
+    "entry_price": 3.0705,
+    "size": 3.4214,
+    "original_size": 3.4214,
+    "stop_loss": 3.0254,
+    "take_profit": 3.1607,
+    "profit_levels": {
+      "1R": 3.1156,
+      "2R": 3.1607,
+      "3R": 3.2058,
+      "4R": 3.2509
+    },
+    "profits_taken": {
+      "1R": false,
+      "2R": false,
+      "3R": false,
+      "4R": false
+    },
+    "high_water_mark": 3.0705,
+    "trailing_stop_active": false,
+    "atr": 0.02254999999999994,
+    "signal_type": "traditional",
+    "opened_at": 1755285920.76383,
+    "paper_trade": false
+  }
+}

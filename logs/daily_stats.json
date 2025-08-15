@@ -1,0 +1,54 @@
+{
+  "2025-08-12": {
+    "trades_count": 3,
+    "winners": 1,
+    "losers": 0,
+    "total_pnl": 8.41,
+    "win_rate": 100.0,
+    "avg_win": 6.68,
+    "avg_loss": 0,
+    "profit_factor": Infinity,
+    "symbols_traded": [
+      "ETH-USDT-SWAP"
+    ]
+  },
+  "2025-08-13": {
+    "trades_count": 2,
+    "winners": 1,
+    "losers": 0,
+    "total_pnl": 4.95,
+    "win_rate": 100.0,
+    "avg_win": 1.18,
+    "avg_loss": 0,
+    "profit_factor": Infinity,
+    "symbols_traded": [
+      "SOL-USDT-SWAP"
+    ]
+  },
+  "2025-08-14": {
+    "trades_count": 8,
+    "winners": 1,
+    "losers": 0,
+    "total_pnl": -28.52,
+    "win_rate": 100.0,
+    "avg_win": 8.89,
+    "avg_loss": 0,
+    "profit_factor": Infinity,
+    "symbols_traded": [
+      "AVAX-USDT-SWAP"
+    ]
+  },
+  "2025-08-15": {
+    "trades_count": 1,
+    "winners": 0,
+    "losers": 1,
+    "total_pnl": -116.41,
+    "win_rate": 0.0,
+    "avg_win": 0,
+    "avg_loss": 116.41,
+    "profit_factor": 0.0,
+    "symbols_traded": [
+      "ETH-USDT-SWAP"
+    ]
+  }
+}

@@ -1,0 +1,79 @@
+# config.yaml
+
+# --- General Settings ---
+starting_equity: 3000  # Target portfolio size for proper scaling
+max_open_trades: 10
+
+# --- Pure Perpetual Futures Strategy ---
+margin_per_position_pct: 0.05    # Allocate 5% of available margin per position (~$125)
+                                  # This ensures consistent capital allocation across ALL assets regardless of price
+
+# Special allocation for major assets to ensure meaningful exposure
+btc_margin_per_position_pct: 0.05  # 5% allocation for BTC (higher due to contract size and price)
+
+# Note: Risk is now determined by position size × stop distance, not pre-allocated
+# Higher leverage assets naturally get larger positions with proportional risk
+
+# --- Safety Limits (Percentage-Based) ---
+equity_kill_switch_pct: 0.50     # Stop all trading if equity drops 50% from starting
+daily_loss_limit_pct: 0.05       # Emergency stop if daily losses exceed 5%
+
+# --- Indicator Settings ---
+rsi:
+  period: 14
+  long_threshold: 45
+  short_threshold: 55
+  momentum_long: 40
+  momentum_short: 60
+
+ema:
+  period: 20
+
+macd:
+  fast: 12
+  slow: 26
+  signal: 9
+
+bollinger_bands:
+  period: 20
+  std_dev: 2
+  width_threshold_pct: 70
+  breakout_momentum_pct: 2.0
+
+volume:
+  confirm_ratio: 0.8
+  strong_ratio: 1.5
+  memecoin_ratio: 2.0
+
+atr:
+  period: 14
+  stop_loss_multiplier: 2
+  trailing_sl_multiplier: 1
+
+# --- Staged Profit Taking ---
+profit_taking:
+  enabled: true
+  partial_exit_percentage: 0.25  # Take 25% profit at each level
+  stop_loss_progression:
+    "1R": "breakeven"  # Move stop to entry after 1R
+    "2R": "1R"         # Move stop to +1R after 2R  
+    "3R": "2R"         # Move stop to +2R after 3R
+    "4R": "trailing"   # Activate trailing stop after 4R
+  trailing_atr_multiplier: 2.0
+
+# --- Assets ---
+memecoins:
+  - BONK-USDT-SWAP
+  - PEPE-USDT-SWAP
+  - PENGU-USDT-SWAP
+
+traditional_assets:
+  - BTC-USDT-SWAP
+  - ETH-USDT-SWAP
+  - SOL-USDT-SWAP
+
+# --- Signal Priorities ---
+signal_priority:
+  - memecoin
+  - traditional
+  - momentum
