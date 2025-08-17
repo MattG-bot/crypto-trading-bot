@@ -42,10 +42,6 @@ def run_strategy_loop():
         errors_count = 0
 
         for symbol in TRADING_SYMBOLS:
-            if symbol in open_trades:
-                logger.debug(f"🕒 Skipping {symbol} — already in trade")
-                continue
-
             try:
                 logger.debug(f"📈 Analyzing {symbol}...")
                 candles = get_candles(symbol, bar="15m", limit=100)
@@ -62,7 +58,16 @@ def run_strategy_loop():
                     signals_found += 1
                     logger.info(f"✅ Signal detected for {symbol}: {direction.upper()} ({signal_type})")
                     trade_logger.info(f"SIGNAL | {symbol} | {direction.upper()} | {signal_type} | Price: TBD")
-                    enter_trade(symbol, direction, signal_type)
+                    
+                    # Check for reversal first - if position exists in opposite direction, close it
+                    from bot.trade_executor import check_for_signal_reversal
+                    reversal_executed = check_for_signal_reversal(symbol, direction, signal_type)
+                    
+                    # Enter new trade (either fresh entry or reversal entry)
+                    if symbol not in open_trades or reversal_executed:
+                        enter_trade(symbol, direction, signal_type)
+                    else:
+                        logger.debug(f"🕒 {symbol} already in trade (same direction) — skipping")
 
             except Exception as e:
                 errors_count += 1
