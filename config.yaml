@@ -10,6 +10,7 @@ margin_per_position_pct: 0.05    # Allocate 5% of available margin per position 
 
 # Special allocation for major assets to ensure meaningful exposure
 btc_margin_per_position_pct: 0.05  # 5% allocation for BTC (higher due to contract size and price)
+memecoin_margin_per_position_pct: 0.025  # 2.5% allocation for memecoins (smaller positions due to volatility)
 
 # Note: Risk is now determined by position size × stop distance, not pre-allocated
 # Higher leverage assets naturally get larger positions with proportional risk
@@ -53,7 +54,12 @@ atr:
 # --- Staged Profit Taking ---
 profit_taking:
   enabled: true
-  partial_exit_percentage: 0.25  # Take 25% profit at each level
+  # Scaled profit taking - keep more exposure during early trend development
+  profit_levels:
+    "1R": 0.15  # Take 15% profit (85% remaining)
+    "2R": 0.20  # Take 20% profit (65% remaining) 
+    "3R": 0.25  # Take 25% profit (40% remaining)
+    "4R": 0.40  # Take 40% profit (0% remaining - full exit for re-entry)
   stop_loss_progression:
     "1R": "breakeven"  # Move stop to entry after 1R
     "2R": "1R"         # Move stop to +1R after 2R  

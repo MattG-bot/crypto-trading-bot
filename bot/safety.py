@@ -86,7 +86,27 @@ class SafetyManager:
                 return True
                 
             available_margin = margin_info['availBal']
-            trade_value = trade_size * current_price
+            
+            # Apply contract multipliers for accurate trade value calculation
+            contract_multipliers = {
+                'BTC-USDT-SWAP': 0.01,    # 1 contract = 0.01 BTC
+                'ETH-USDT-SWAP': 0.1,     # 1 contract = 0.1 ETH  
+                'SOL-USDT-SWAP': 1.0,     # 1 contract = 1 SOL
+                'XRP-USDT-SWAP': 100.0,   # 1 contract = 100 XRP
+                'LTC-USDT-SWAP': 1.0,     # 1 contract = 1 LTC
+                'ADA-USDT-SWAP': 100.0,   # 1 contract = 100 ADA
+                'AVAX-USDT-SWAP': 1.0,    # 1 contract = 1 AVAX
+                'LINK-USDT-SWAP': 1.0,    # 1 contract = 1 LINK
+                'NEAR-USDT-SWAP': 10.0,   # 1 contract = 10 NEAR
+                
+                # Memecoins - adjusted for proper $1000 position sizing
+                'BONK-USDT-SWAP': 1000000.0,   # 1 contract = 1M BONK
+                'PEPE-USDT-SWAP': 1000000.0,   # 1 contract = 1M PEPE  
+                'PENGU-USDT-SWAP': 1000.0,     # 1 contract = 1K PENGU
+            }
+            
+            contract_multiplier = contract_multipliers.get(symbol, 1.0)
+            trade_value = trade_size * current_price * contract_multiplier
             
             # For perpetual futures: validate based on margin usage, not notional value
             # Estimate margin requirement based on typical leverage for each asset
@@ -100,11 +120,15 @@ class SafetyManager:
             estimated_margin_needed = trade_value / estimated_leverage
             
             # Don't allow more than 25% of available margin per single position
-            max_margin_per_position = available_margin * 0.25
-            
-            if estimated_margin_needed > max_margin_per_position:
-                logger.warning(f"⚠️  Margin requirement too high for {symbol}: ${estimated_margin_needed:.2f} > ${max_margin_per_position:.2f} (25% of available)")
-                return False
+            # EXCEPTION: BTC gets enhanced allocation and is exempt from this safety limit
+            if symbol != 'BTC-USDT-SWAP':
+                max_margin_per_position = available_margin * 0.25
+                
+                if estimated_margin_needed > max_margin_per_position:
+                    logger.warning(f"⚠️  Margin requirement too high for {symbol}: ${estimated_margin_needed:.2f} > ${max_margin_per_position:.2f} (25% of available)")
+                    return False
+            else:
+                logger.info(f"🟡 {symbol} exempt from 25% safety limit - using enhanced BTC allocation")
             
             # Check minimum notional value for perpetual futures (typically $10+ for crypto)
             min_notional = 10

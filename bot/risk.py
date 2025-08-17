@@ -39,19 +39,22 @@ def calculate_profit_levels(entry_price, stop_loss, direction="long"):
     """
     risk = abs(entry_price - stop_loss)
     
+    # Use higher precision for memecoins (very small prices)
+    precision = 10 if entry_price < 0.001 else 6
+    
     if direction == "long":
         levels = {
-            "1R": round(entry_price + 1 * risk, 6),
-            "2R": round(entry_price + 2 * risk, 6), 
-            "3R": round(entry_price + 3 * risk, 6),
-            "4R": round(entry_price + 4 * risk, 6)
+            "1R": round(entry_price + 1 * risk, precision),
+            "2R": round(entry_price + 2 * risk, precision), 
+            "3R": round(entry_price + 3 * risk, precision),
+            "4R": round(entry_price + 4 * risk, precision)
         }
     else:
         levels = {
-            "1R": round(entry_price - 1 * risk, 6),
-            "2R": round(entry_price - 2 * risk, 6),
-            "3R": round(entry_price - 3 * risk, 6),
-            "4R": round(entry_price - 4 * risk, 6)
+            "1R": round(entry_price - 1 * risk, precision),
+            "2R": round(entry_price - 2 * risk, precision),
+            "3R": round(entry_price - 3 * risk, precision),
+            "4R": round(entry_price - 4 * risk, precision)
         }
     
     return levels
@@ -154,11 +157,15 @@ def get_stop_and_size(symbol, entry_price, direction="long", candles=None):
     # Step 1: Allocate fixed margin per position (consistent across all assets)
     margin_per_position_pct = config.get('margin_per_position_pct', 0.10)  # 10% of available margin per position
     
-    # Special allocation for BTC to ensure meaningful exposure
+    # Special allocations for different asset classes
     if symbol == 'BTC-USDT-SWAP':
-        btc_allocation_pct = config.get('btc_margin_per_position_pct', 0.05)  # 5% for BTC (higher than standard 3%)
+        btc_allocation_pct = config.get('btc_margin_per_position_pct', 0.05)  # 5% for BTC
         target_margin = available_margin * btc_allocation_pct
         logger.info(f"[{symbol}] Using enhanced BTC allocation: {btc_allocation_pct*100:.0f}%")
+    elif symbol in memecoins:
+        memecoin_allocation_pct = config.get('memecoin_margin_per_position_pct', 0.025)  # 2.5% for memecoins
+        target_margin = available_margin * memecoin_allocation_pct
+        logger.info(f"[{symbol}] Using memecoin allocation: {memecoin_allocation_pct*100:.1f}%")
     else:
         target_margin = available_margin * margin_per_position_pct
     
@@ -212,6 +219,11 @@ def get_stop_and_size(symbol, entry_price, direction="long", candles=None):
         'AVAX-USDT-SWAP': 1.0,    # 1 contract = 1 AVAX
         'LINK-USDT-SWAP': 1.0,    # 1 contract = 1 LINK
         'NEAR-USDT-SWAP': 10.0,   # 1 contract = 10 NEAR
+        
+        # Memecoins - adjusted for proper $1000 position sizing
+        'BONK-USDT-SWAP': 1000000.0,   # 1 contract = 1M BONK
+        'PEPE-USDT-SWAP': 1000000.0,   # 1 contract = 1M PEPE  
+        'PENGU-USDT-SWAP': 1000.0,     # 1 contract = 1K PENGU
     }
     
     contract_multiplier = contract_multipliers.get(symbol, 1.0)
@@ -222,6 +234,31 @@ def get_stop_and_size(symbol, entry_price, direction="long", candles=None):
     # Calculate contracts needed: Notional Value / (Entry Price × Contract Multiplier)  
     # This accounts for how many units of underlying asset each contract represents
     size = notional_position_value / (entry_price * contract_multiplier)
+    
+    # OKX Position Limits - prevent exceeding exchange maximums
+    okx_position_limits = {
+        'BTC-USDT-SWAP': 100000,      # Max 100k contracts
+        'ETH-USDT-SWAP': 100000,      # Max 100k contracts
+        'SOL-USDT-SWAP': 50000,       # Max 50k contracts
+        'XRP-USDT-SWAP': 10000,       # Max 10k contracts
+        'LTC-USDT-SWAP': 50000,       # Max 50k contracts
+        'ADA-USDT-SWAP': 10000,       # Max 10k contracts
+        'AVAX-USDT-SWAP': 50000,      # Max 50k contracts
+        'LINK-USDT-SWAP': 50000,      # Max 50k contracts
+        'NEAR-USDT-SWAP': 50000,      # Max 50k contracts
+        
+        # Memecoins - much lower limits due to volatility
+        'BONK-USDT-SWAP': 100,        # Max 100 contracts (100M BONK)
+        'PEPE-USDT-SWAP': 100,        # Max 100 contracts (100M PEPE)
+        'PENGU-USDT-SWAP': 1000,      # Max 1000 contracts (1M PENGU)
+    }
+    
+    max_contracts = okx_position_limits.get(symbol, 10000)  # Default 10k limit
+    if size > max_contracts:
+        logger.warning(f"[{symbol}] Position size {size:.2f} exceeds OKX limit {max_contracts}, reducing to limit")
+        size = max_contracts
+        # Recalculate notional and margin with reduced size
+        notional_position_value = size * entry_price * contract_multiplier
     
     logger.info(f"[{symbol}] PURE PERPETUAL SIZING:")
     logger.info(f"  Target Margin: ${target_margin:.2f} (fixed allocation)")
@@ -297,13 +334,13 @@ def get_stop_and_size(symbol, entry_price, direction="long", candles=None):
     
     logger.info(f"[{symbol}] FINAL POSITION:")
     logger.info(f"  Size: {size:.4f} contracts")
-    logger.info(f"  Notional: ${size * entry_price:.2f}")
-    logger.info(f"  Margin: ${(size * entry_price / estimated_leverage):.2f}")
+    logger.info(f"  Notional: ${size * entry_price * contract_multiplier:.2f}")
+    logger.info(f"  Margin: ${(size * entry_price * contract_multiplier / estimated_leverage):.2f}")
     logger.info(f"  Stop Loss: ${stop_loss:.2f}")
     logger.info(f"  Risk if Stopped: ${risk_amount:.2f}")
     
-    # Verify position value
-    actual_position_value = size * entry_price
+    # Verify position value with correct contract multiplier
+    actual_position_value = size * entry_price * contract_multiplier
     logger.info(f"[{symbol}] Position Check - Risk: ${risk_amount:.2f}, Position: ${actual_position_value:.2f}, Size: {size:.4f}")
     
     if size <= 0:

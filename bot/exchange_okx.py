@@ -223,9 +223,17 @@ def validate_margin_before_order(symbol, size, price):
         required_margin = get_real_time_margin_requirement(symbol, size, price)
         if required_margin is None:
             # Fallback to simplified calculation if OKX API fails
-            notional_value = size * price
+            # Apply contract multipliers for accurate calculation
+            contract_multipliers = {
+                'BTC-USDT-SWAP': 0.01, 'ETH-USDT-SWAP': 0.1, 'SOL-USDT-SWAP': 1.0,
+                'XRP-USDT-SWAP': 100.0, 'LTC-USDT-SWAP': 1.0, 'ADA-USDT-SWAP': 100.0,
+                'AVAX-USDT-SWAP': 1.0, 'LINK-USDT-SWAP': 1.0, 'NEAR-USDT-SWAP': 10.0,
+                'BONK-USDT-SWAP': 1000000.0, 'PEPE-USDT-SWAP': 1000000.0, 'PENGU-USDT-SWAP': 1000.0
+            }
+            contract_multiplier = contract_multipliers.get(symbol, 1.0)
+            notional_value = size * price * contract_multiplier
             required_margin = notional_value / 10  # Assume 10x leverage
-            print(f"⚠️ Using fallback margin calculation: ${required_margin:.2f}")
+            print(f"⚠️ Using fallback margin calculation: ${required_margin:.2f} (notional: ${notional_value:.2f})")
         
         # Add 5% buffer for fees and market movement
         margin_with_buffer = required_margin * 1.05

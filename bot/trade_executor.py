@@ -8,6 +8,88 @@ from bot.portfolio import portfolio
 
 open_trades = {}
 
+def check_for_signal_reversal(symbol, new_signal_direction, signal_type):
+    """
+    Check if a position exists in the opposite direction to the current signal.
+    Apply profit protection rules before allowing reversal.
+    Returns True if reversal was executed, False otherwise.
+    """
+    if symbol not in open_trades:
+        return False
+    
+    current_position = open_trades[symbol]
+    current_direction = current_position.get("direction")
+    
+    # Check if signal direction is opposite to current position
+    if (current_direction == "long" and new_signal_direction == "short") or \
+       (current_direction == "short" and new_signal_direction == "long"):
+        
+        current_price = get_current_price(symbol)
+        if not current_price:
+            logger.error(f"❌ Could not get current price for {symbol} reversal")
+            return False
+            
+        # Calculate current P&L and R-multiple
+        entry_price = current_position.get("entry_price", current_price)
+        stop_loss = current_position.get("stop_loss")
+        
+        if current_direction == "long":
+            pnl_pct = ((current_price - entry_price) / entry_price) * 100
+            if stop_loss:
+                risk_distance = entry_price - stop_loss
+                r_multiple = (current_price - entry_price) / risk_distance if risk_distance > 0 else 0
+            else:
+                r_multiple = 0
+        else:
+            pnl_pct = ((entry_price - current_price) / entry_price) * 100
+            if stop_loss:
+                risk_distance = stop_loss - entry_price
+                r_multiple = (entry_price - current_price) / risk_distance if risk_distance > 0 else 0
+            else:
+                r_multiple = 0
+        
+        # PROFIT PROTECTION RULES - Don't reverse if:
+        
+        # 1. Position is profitable above 0.5R (protecting near-profit positions)
+        if r_multiple >= 0.5:
+            logger.info(f"🛡️ REVERSAL BLOCKED for {symbol} - Profit protection active")
+            logger.info(f"   Position at {r_multiple:.2f}R ({pnl_pct:+.2f}%) - too close to 1R target")
+            logger.info(f"   Allowing current {current_direction} to reach profit targets")
+            return False
+        
+        # 2. Position is profitable above 2% (minimum profit protection)
+        if pnl_pct >= 2.0:
+            logger.info(f"🛡️ REVERSAL BLOCKED for {symbol} - Minimum profit protection")
+            logger.info(f"   Position profitable at {pnl_pct:+.2f}% - protecting gains")
+            return False
+        
+        # 3. Position held less than 2 hours (prevent whipsaws)
+        import time
+        position_age_hours = (time.time() - current_position.get("opened_at", 0)) / 3600
+        if position_age_hours < 2.0:
+            logger.info(f"🛡️ REVERSAL BLOCKED for {symbol} - Position too young")
+            logger.info(f"   Held for {position_age_hours:.1f}h - minimum 2h hold period")
+            return False
+        
+        # 4. Only allow reversal for very strong signals (momentum beats traditional)
+        if signal_type != "momentum" and current_position.get("signal_type") == "momentum":
+            logger.info(f"🛡️ REVERSAL BLOCKED for {symbol} - Signal strength insufficient")
+            logger.info(f"   {signal_type} signal not strong enough to override momentum position")
+            return False
+        
+        # REVERSAL ALLOWED - All protection rules passed
+        logger.info(f"🔄 REVERSAL APPROVED for {symbol}!")
+        logger.info(f"   Current position: {current_direction.upper()} ({r_multiple:+.2f}R, {pnl_pct:+.2f}%)")
+        logger.info(f"   New signal: {new_signal_direction.upper()} ({signal_type})")
+        logger.info(f"   Age: {position_age_hours:.1f}h - Protection rules satisfied")
+        logger.info(f"   🚀 Executing reversal")
+        
+        # Close the position with reversal reason
+        close_trade(symbol, exit_reason="REVERSAL", exit_price=current_price, pnl_pct=pnl_pct)
+        return True
+    
+    return False
+
 def enter_trade(symbol, direction, signal_type):
     logger.info(f"💰 Attempting to enter {direction.upper()} trade for {symbol} based on {signal_type} signal.")
 
@@ -156,13 +238,18 @@ def check_and_close_trades():
                     hit_target = True
                 
                 if hit_target:
-                    # Take partial profit (25% of remaining position)
+                    # Get scaled profit percentage from config
+                    from bot.config import config
+                    profit_levels = config.get('profit_taking', {}).get('profit_levels', {})
+                    profit_pct = profit_levels.get(level, 0.25)  # Default to 25% if not found
+                    
+                    # Take scaled profit based on level
                     current_size = trade["size"]
-                    exit_size = round(current_size * 0.25, 4)
+                    exit_size = round(current_size * profit_pct, 4)
                     remaining_size = round(current_size - exit_size, 4)
                     
                     logger.info(f"🎯 {level} profit level hit for {symbol} at ${current_price}")
-                    logger.info(f"   💰 Taking 25% profit: {exit_size} (remaining: {remaining_size})")
+                    logger.info(f"   💰 Taking {profit_pct*100:.0f}% profit: {exit_size} (remaining: {remaining_size})")
                     
                     # Execute partial exit
                     if take_partial_profit(symbol, exit_size, level, current_price, pnl_pct):
@@ -196,13 +283,34 @@ def check_and_close_trades():
             high_water_mark = trade.get("high_water_mark", entry_price)
             trailing_sl = calculate_trailing_stop(current_price, high_water_mark, atr, direction)
             
-            # Update trailing stop if it's better than current stop
-            if direction == "long" and trailing_sl > trade["stop_loss"]:
-                trade["stop_loss"] = trailing_sl
-                logger.debug(f"📈 {symbol} trailing stop updated to ${trailing_sl}")
-            elif direction == "short" and trailing_sl < trade["stop_loss"]:
-                trade["stop_loss"] = trailing_sl
-                logger.debug(f"📈 {symbol} trailing stop updated to ${trailing_sl}")
+            # VALIDATION: Ensure trailing stop is reasonable before updating
+            entry_price = trade.get("entry_price", current_price)
+            
+            # For longs: stop should be below entry, for shorts: stop should be above entry
+            valid_trailing_stop = False
+            if direction == "long":
+                # Stop should be below entry but not ridiculously low
+                if entry_price * 0.5 <= trailing_sl <= entry_price * 0.95:
+                    valid_trailing_stop = True
+                else:
+                    logger.warning(f"⚠️ Invalid trailing stop for {symbol}: ${trailing_sl:.6f} (entry: ${entry_price:.2f})")
+            else:
+                # Stop should be above entry but not ridiculously high  
+                if entry_price * 1.05 <= trailing_sl <= entry_price * 2.0:
+                    valid_trailing_stop = True
+                else:
+                    logger.warning(f"⚠️ Invalid trailing stop for {symbol}: ${trailing_sl:.6f} (entry: ${entry_price:.2f})")
+            
+            # Only update if trailing stop is valid and better than current stop
+            if valid_trailing_stop:
+                if direction == "long" and trailing_sl > trade["stop_loss"]:
+                    trade["stop_loss"] = trailing_sl
+                    logger.debug(f"📈 {symbol} trailing stop updated to ${trailing_sl}")
+                elif direction == "short" and trailing_sl < trade["stop_loss"]:
+                    trade["stop_loss"] = trailing_sl
+                    logger.debug(f"📈 {symbol} trailing stop updated to ${trailing_sl}")
+            else:
+                logger.warning(f"🚫 Blocked invalid trailing stop update for {symbol}")
 
         # Check stop loss
         exit_reason = None
